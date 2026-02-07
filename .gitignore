@@ -1,0 +1,45 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+.env
+
+# Minecraft (fichiers lourds/sensibles)
+server/current/*.jar
+server/current/eula.txt
+server/current/server.properties
+server/current/whitelist.json
+server/current/ops.json
+server/current/banned-*.json
+server/current/usercache.json
+server/current/world/
+server/current/logs/
+
+# Mondes (données terrain trop lourdes)
+worlds/*/world/region/
+worlds/*/world/DIM-1/
+worlds/*/world/DIM1/
+worlds/*/world/playerdata/
+worlds/*/world/stats/
+worlds/*/world/data/
+
+# Backups (très lourds)
+backups/*.tar.gz
+backups/*.zip
+backups/worlds/
+backups/server_backup_*
+
+# Logs
+logs/
+*.log
+
+# Système
+.DS_Store
+.current_world
+Thumbs.db

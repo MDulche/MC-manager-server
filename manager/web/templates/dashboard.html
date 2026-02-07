@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Manager</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            max-width: 1200px; 
+            margin: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        h1 { color: #4CAF50; }
+        h2 { color: #2196F3; margin-top: 30px; }
+        pre { 
+            background:#0a0a0a; 
+            color:#0f0; 
+            padding:15px; 
+            height:400px; 
+            overflow:auto; 
+            border:2px solid #333; 
+            font-size:13px; 
+            white-space:pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        button { 
+            padding:12px 24px; 
+            font-size:16px; 
+            margin:5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        button[type="submit"]:first-of-type {
+            background: #4CAF50;
+            color: white;
+        }
+        button[type="submit"]:first-of-type:hover {
+            background: #45a049;
+        }
+        .stop-btn {
+            background: #f44336 !important;
+            color: white !important;
+        }
+        .stop-btn:hover {
+            background: #da190b !important;
+        }
+        .status { 
+            font-size: 18px; 
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .online { 
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+        }
+        .offline { 
+            color: #f44336;
+            border: 2px solid #f44336;
+        }
+        input[type="text"] {
+            width: 400px;
+            padding: 10px;
+            font-size: 14px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+        form {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Minecraft Manager</h1>
+
+    <p>
+        Statut serveur : 
+        <span id="status" class="status {% if running %}online{% else %}offline{% endif %}">
+            {% if running %}🟢 EN LIGNE{% else %}🔴 ARRÊTÉ{% endif %}
+        </span>
+    </p>
+    <!-- Boutons Installation/Mise à jour -->
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        {% if not server_installed %}
+        <button onclick="window.location.href='/install-server-form'" 
+                style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+            📥 Installer Serveur Minecraft
+        </button>
+        {% else %}
+        <button onclick="window.location.href='/update-server-form'" 
+                style="flex: 1; padding: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+            🔄 Mettre à Jour Serveur
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="controls">
+    <form action="/start" method="post">
+        <button type="submit">▶️ Démarrer</button>
+    </form>
+    <form action="/stop" method="post">
+        <button type="submit" class="stop-btn">⏹️ Arrêt immédiat</button>
+    </form>
+    <form action="/stop-graceful" method="post">
+        <button type="submit" style="background:#ff9800;">⏰ Arrêt 5min</button>
+    </form>
+    <form action="/restart" method="post">
+        <button type="submit" style="background:#00BCD4;">🔄 Redémarrer</button>
+    </form>
+    <form action="/backup" method="post">
+        <button type="submit" style="background:#2196F3;">💾 Backup monde</button>
+    </form>
+</div>
+
+<h2>🌍 Gestion mondes</h2>
+<div style="background:#2a2a2a;padding:15px;border:2px solid #333;border-radius:4px;margin-bottom:20px;">
+    <p>Monde actif : <strong id="current-world" style="color:#4CAF50;">Chargement...</strong></p>
+    
+    <!-- Switch monde -->
+    <div style="margin-bottom:15px;">
+        <select id="world-select" style="padding:10px;font-size:14px;background:#1a1a1a;color:#e0e0e0;border:2px solid #555;border-radius:4px;width:300px;">
+            <option value="">Chargement...</option>
+        </select>
+        <button onclick="switchWorld()" style="background:#9C27B0;padding:10px 20px;margin:5px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">🔄 Charger</button>
+        <button onclick="deleteWorld()" style="background:#f44336;padding:10px 20px;margin:5px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">🗑️ Supprimer</button>
+        <button onclick="showBackups()" style="background:#2196F3;padding:10px 20px;margin:5px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">💾 Backups</button>
+    </div>
+    
+    <!-- Créer nouveau -->
+    <form action="/create-world" method="post" onsubmit="return confirm('Le monde actuel sera archivé. Continuer?');">
+        <input type="text" name="world_name" placeholder="Nom du nouveau monde" style="padding:10px;font-size:14px;background:#1a1a1a;color:#e0e0e0;border:2px solid #555;border-radius:4px;width:300px;" required />
+        <button type="submit" style="background:#FF5722;padding:10px 20px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">✨ Créer nouveau</button>
+    </form>
+    
+    <!-- Zone backups (cachée par défaut) -->
+    <div id="backups-panel" style="display:none;margin-top:15px;padding:15px;background:#1a1a1a;border:2px solid #555;border-radius:4px;">
+        <h3 style="margin-top:0;">Backups du monde : <span id="backup-world-name"></span></h3>
+        <div id="backups-list" style="max-height:300px;overflow:auto;"></div>
+    </div>
+</div>
+
+<h2>⚙️ Configuration serveur</h2>
+<div style="background:#2a2a2a;padding:15px;border:2px solid #333;border-radius:4px;margin-bottom:20px;">
+    <form id="config-form">
+        <label style="display:block;margin-bottom:10px;">
+            <strong>Max joueurs:</strong>
+            <input type="number" id="max-players" min="1" max="100" style="padding:8px;margin-left:10px;background:#1a1a1a;color:#e0e0e0;border:2px solid #555;border-radius:4px;width:80px;" />
+        </label>
+        <label style="display:block;margin-bottom:10px;">
+            <input type="checkbox" id="enable-whitelist" style="margin-right:10px;" />
+            <strong>Activer whitelist</strong>
+        </label>
+        <button type="button" onclick="saveConfig()" style="background:#FF9800;padding:10px 20px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">💾 Sauvegarder (redémarrage requis)</button>
+    </form>
+</div>
+
+<h2>👥 Whitelist</h2>
+<div style="background:#2a2a2a;padding:15px;border:2px solid #333;border-radius:4px;margin-bottom:20px;">
+    <form onsubmit="event.preventDefault(); addWhitelist();" style="margin-bottom:15px;">
+        <input type="text" id="whitelist-username" placeholder="Pseudo Minecraft" style="padding:10px;background:#1a1a1a;color:#e0e0e0;border:2px solid #555;border-radius:4px;width:250px;" required />
+        <button type="submit" style="background:#4CAF50;padding:10px 20px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">➕ Ajouter</button>
+    </form>
+    <div id="whitelist-players" style="max-height:200px;overflow:auto;"></div>
+</div>
+
+<h2>🎮 Gamerules rapides</h2>
+<div style="background:#2a2a2a;padding:15px;border:2px solid #333;border-radius:4px;margin-bottom:20px;">
+    <button onclick="applyGamerule('playersSleepingPercentage', '1')" style="background:#9C27B0;padding:10px 20px;margin:5px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">🌙 Sleep 1%</button>
+    <button onclick="applyGamerule('keepInventory', 'true')" style="background:#2196F3;padding:10px 20px;margin:5px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">🎒 Keep Inventory</button>
+    <button onclick="applyGamerule('doDaylightCycle', 'false')" style="background:#FF5722;padding:10px 20px;margin:5px;border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">⏸️ Freeze Day</button>
+</div>
+
+<script>
+    // Config serveur
+    async function loadConfig() {
+        try {
+            const res = await fetch('/server-config');
+            const config = await res.json();
+            document.getElementById('max-players').value = config.max_players;
+            document.getElementById('enable-whitelist').checked = config.whitelist_enabled === 'true';
+        } catch(e) {}
+    }
+
+    function saveConfig() {
+        if (!confirm('Le serveur va redémarrer automatiquement pour appliquer. Continuer?')) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/update-config';
+        
+        const input1 = document.createElement('input');
+        input1.type = 'hidden';
+        input1.name = 'max_players';
+        input1.value = document.getElementById('max-players').value;
+        
+        const input2 = document.createElement('input');
+        input2.type = 'hidden';
+        input2.name = 'enable_whitelist';
+        input2.value = document.getElementById('enable-whitelist').checked ? 'true' : 'false';
+        
+        form.appendChild(input1);
+        form.appendChild(input2);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+
+
+
+    // Whitelist
+    async function loadWhitelist() {
+        try {
+            const res = await fetch('/whitelist');
+            const players = await res.json();
+            const div = document.getElementById('whitelist-players');
+            
+            if (players.length === 0) {
+                div.innerHTML = '<p style="color:#888;">Aucun joueur</p>';
+            } else {
+                div.innerHTML = players.map(p => `
+                    <div style="padding:10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;">
+                        <strong>${p.name}</strong>
+                        <div>
+                            <button onclick="kickPlayer('${p.name}')" style="background:#FF9800;padding:6px 12px;margin:0 5px;border:none;border-radius:4px;color:white;cursor:pointer;">👢 Kick</button>
+                            <button onclick="banPlayer('${p.name}')" style="background:#f44336;padding:6px 12px;margin:0 5px;border:none;border-radius:4px;color:white;cursor:pointer;">🚫 Ban</button>
+                            <button onclick="removeWhitelist('${p.name}')" style="background:#555;padding:6px 12px;border:none;border-radius:4px;color:white;cursor:pointer;">❌ Retirer</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch(e) {}
+    }
+
+    function addWhitelist() {
+        const username = document.getElementById('whitelist-username').value.trim();
+        if (!username) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/whitelist-add';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'username';
+        input.value = username;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function removeWhitelist(username) {
+        if (!confirm(`Retirer ${username} de la whitelist?`)) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/whitelist-remove';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'username';
+        input.value = username;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function kickPlayer(username) {
+        if (!confirm(`Kick ${username}?`)) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/kick';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'username';
+        input.value = username;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function banPlayer(username) {
+        if (!confirm(`BAN ${username}?`)) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/ban';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'username';
+        input.value = username;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function applyGamerule(rule, value) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/gamerule';
+        
+        const input1 = document.createElement('input');
+        input1.type = 'hidden';
+        input1.name = 'rule';
+        input1.value = rule;
+        
+        const input2 = document.createElement('input');
+        input2.type = 'hidden';
+        input2.name = 'value';
+        input2.value = value;
+        
+        form.appendChild(input1);
+        form.appendChild(input2);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Init
+    loadConfig();
+    loadWhitelist();
+    setInterval(loadWhitelist, 10000);
+</script>
+
+
+<script>
+    function switchWorld() {
+        const select = document.getElementById('world-select');
+        if (!select.value) return alert('Sélectionnez un monde');
+        if (!confirm('Serveur doit être arrêté. Continuer?')) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/switch-world';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'world';
+        input.value = select.value;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function deleteWorld() {
+        const select = document.getElementById('world-select');
+        if (!select.value) return alert('Sélectionnez un monde');
+        if (!confirm(`Supprimer '${select.value}' et TOUS ses backups ?`)) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/delete-world';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'world_name';
+        input.value = select.value;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    async function showBackups() {
+        const select = document.getElementById('world-select');
+        if (!select.value) return alert('Sélectionnez un monde');
+        
+        const worldName = select.value;
+        document.getElementById('backup-world-name').textContent = worldName;
+        document.getElementById('backups-panel').style.display = 'block';
+        
+        try {
+            const res = await fetch(`/world-backups/${worldName}`);
+            const backups = await res.json();
+            const list = document.getElementById('backups-list');
+            
+            if (backups.length === 0) {
+                list.innerHTML = '<p style="color:#888;">Aucun backup</p>';
+            } else {
+                list.innerHTML = backups.map(b => {
+                    const date = new Date(b.date * 1000).toLocaleString('fr-FR');
+                    const sizeMB = (b.size / 1024 / 1024).toFixed(2);
+                    return `<div style="padding:10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <strong>${b.name}</strong><br>
+                            <small style="color:#888;">${sizeMB} MB - ${date}</small>
+                        </div>
+                        <button onclick="restoreBackup('${worldName}', '${b.file}')" style="background:#4CAF50;padding:8px 16px;border:none;border-radius:4px;color:white;cursor:pointer;">📥 Restaurer</button>
+                    </div>`;
+                }).join('');
+            }
+        } catch(e) {
+            alert('Erreur chargement backups');
+        }
+    }
+
+    function restoreBackup(worldName, backupFile) {
+        if (!confirm(`Restaurer ce backup ? Le monde actuel sera sauvegardé en sécurité.`)) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/restore-backup';
+        
+        const input1 = document.createElement('input');
+        input1.type = 'hidden';
+        input1.name = 'world_name';
+        input1.value = worldName;
+        
+        const input2 = document.createElement('input');
+        input2.type = 'hidden';
+        input2.name = 'backup_file';
+        input2.value = backupFile;
+        
+        form.appendChild(input1);
+        form.appendChild(input2);
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+
+
+
+<script>
+// Refresh liste mondes
+async function refreshWorlds() {
+    try {
+        const res = await fetch('/worlds');
+        const data = await res.json();
+        
+        document.getElementById('current-world').textContent = data.current || 'Aucun';
+        
+        const select = document.getElementById('world-select');
+        select.innerHTML = data.worlds.map(w => {
+            const sizeMB = (w.size / 1024 / 1024).toFixed(2);
+            return `<option value="${w.name}">${w.name} (${sizeMB} MB)</option>`;
+        }).join('');
+        
+        if (data.worlds.length === 0) {
+            select.innerHTML = '<option value="">Aucun monde disponible</option>';
+        }
+    } catch(e) {
+        console.error('Erreur mondes:', e);
+    }
+}
+
+refreshWorlds();
+setInterval(refreshWorlds, 10000);
+</script>
+
+    <h2>⌨️ Commande console</h2>
+    <form action="/command" method="post">
+        <input type="text" name="cmd" placeholder="/say Bonjour ou /list" autocomplete="off" />
+        <button type="submit">📤 Envoyer</button>
+    </form>
+
+    <h2>📜 Console Live <span style="font-size:14px;color:#888;">(refresh auto 1s)</span></h2>
+    <pre id="logs">
+{% for line in logs %}
+{{ line }}
+{% endfor %}
+    </pre>
+
+    <script>
+        const logsPre = document.getElementById('logs');
+        const statusSpan = document.getElementById('status');
+        
+        // Fonction refresh logs
+        async function refreshLogs() {
+            try {
+                const response = await fetch('/logs');
+                const logsArray = await response.json();
+                
+                if (logsArray && logsArray.length > 0) {
+                    logsPre.textContent = logsArray.join('\n');
+                    logsPre.scrollTop = logsPre.scrollHeight;
+                }
+            } catch (error) {
+                console.error('Erreur refresh logs:', error);
+            }
+        }
+        
+        // Refresh auto toutes les 1s
+        setInterval(refreshLogs, 1000);
+        
+        // Refresh statut via API dédiée
+        setInterval(async () => {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                
+                if (data.running) {
+                    statusSpan.className = 'status online';
+                    statusSpan.textContent = '🟢 EN LIGNE';
+                } else {
+                    statusSpan.className = 'status offline';
+                    statusSpan.textContent = '🔴 ARRÊTÉ';
+                }
+            } catch (error) {
+                console.error('Erreur refresh statut:', error);
+            }
+        }, 5000);
+        
+        // INTERCEPTION formulaire commande → refresh immédiat
+        document.querySelector('form[action="/command"]').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            await fetch('/command', { method: 'POST', body: formData });
+            e.target.reset();
+            // Attendre 500ms que le log arrive dans buffer
+            setTimeout(refreshLogs, 500);
+        });
+    </script>
+
+    <h2>💾 Backups disponibles</h2>
+    <div id="backups" style="background:#2a2a2a;padding:15px;border:2px solid #333;border-radius:4px;max-height:200px;overflow:auto;">
+        <p style="color:#888;">Chargement...</p>
+    </div>
+
+    <script>
+    // Refresh liste backups
+    async function refreshBackups() {
+        try {
+            const res = await fetch('/backups');
+            const backups = await res.json();
+            const div = document.getElementById('backups');
+            
+            if (backups.length === 0) {
+                div.innerHTML = '<p style="color:#888;">Aucun backup</p>';
+            } else {
+                div.innerHTML = backups.map(b => {
+                    const date = new Date(b.date * 1000).toLocaleString('fr-FR');
+                    const sizeMB = (b.size / 1024 / 1024).toFixed(2);
+                    return `<div style="padding:8px;border-bottom:1px solid #444;">
+                        📦 <strong>${b.name}</strong> - ${sizeMB} MB - ${date}
+                    </div>`;
+                }).join('');
+            }
+        } catch(e) {
+            console.error('Erreur backups:', e);
+        }
+    }
+
+    // Refresh au chargement + toutes les 10s
+    refreshBackups();
+    setInterval(refreshBackups, 10000);
+    </script>
+
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "max_players": 20,
+  "whitelist_enabled": true,
+  "whitelist_players": [
+    {
+      "uuid": "337ea4f7-08d4-4097-b0b3-66e114d93aa8",
+      "name": "Neiryx_"
+    }
+  ]
+}

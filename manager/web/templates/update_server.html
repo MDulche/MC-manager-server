@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mise à Jour Serveur Minecraft</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .version-compare {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            gap: 20px;
+        }
+        
+        .version-box {
+            flex: 1;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .version-current {
+            background: #ffebee;
+            border: 2px solid #ef5350;
+        }
+        
+        .version-new {
+            background: #e8f5e9;
+            border: 2px solid #66bb6a;
+        }
+        
+        .version-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .version-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .arrow {
+            align-self: center;
+            font-size: 30px;
+            color: #666;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .warning-box ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .warning-box li {
+            margin-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: monospace;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+        
+        .hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-update {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .btn-update:hover {
+            background: #F57C00;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+        }
+        
+        .btn-cancel {
+            background: #9E9E9E;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #757575;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(158, 158, 158, 0.3);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #f5576c;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Mise à Jour Serveur</h1>
+        <p class="subtitle">Mettre à jour vers la dernière version</p>
+        
+        <div class="version-compare">
+            <div class="version-box version-current">
+                <div class="version-label">Version actuelle</div>
+                <div class="version-number">{{ current_version }}</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="version-box version-new">
+                <div class="version-label">Nouvelle version</div>
+                <div class="version-number">{{ latest_version }}</div>
+            </div>
+        </div>
+        
+        <div class="warning-box">
+            <strong>⚠️ Actions automatiques avant mise à jour:</strong>
+            <ul>
+                <li>✓ Archivage du monde actuel dans <code>worlds/</code></li>
+                <li>✓ Backup complet du serveur dans <code>backups/</code></li>
+                <li>✓ Sauvegarde de toutes les configurations</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong>Durée estimée:</strong> 2-5 minutes ({{ size_mb }} MB à télécharger)</p>
+        </div>
+        
+        <form method="POST" action="/update-server" id="updateForm">
+            <div class="form-group">
+                <label>URL de téléchargement</label>
+                <input 
+                    type="text" 
+                    name="download_url" 
+                    value="{{ download_url }}" 
+                    required
+                    placeholder="https://piston-data.mojang.com/..."
+                >
+                <p class="hint">💡 Modifiez si vous souhaitez installer une version spécifique</p>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="btn-update">
+                    ⬆ Mettre à jour
+                </button>
+                <button type="button" class="btn-cancel" onclick="window.location.href='/'">
+                    ✗ Annuler
+                </button>
+            </div>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #666;">Mise à jour en cours...</p>
+            <p style="font-size: 12px; color: #999; margin-top: 5px;">Backup → Téléchargement → Installation</p>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('updateForm').addEventListener('submit', function() {
+            document.querySelector('.button-group').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
