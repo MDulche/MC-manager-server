@@ -16,6 +16,7 @@ fi
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
+YELLOW='\033[0;33m'
 NC='\033[0m'
 
 # Variables
@@ -24,7 +25,7 @@ GITHUB_USER="MDulche"
 GITHUB_REPO="MC-manager-server"
 GITHUB_BRANCH="main"
 
-echo -e "${BLUE}[1/6]${NC} Vérification système..."
+echo -e "${BLUE}[1/8]${NC} Vérification système..."
 
 # Vérifier Ubuntu/Debian
 if ! command -v apt &> /dev/null; then
@@ -36,12 +37,12 @@ echo -e "${GREEN}✓${NC} Système compatible"
 
 # Mise à jour packages
 echo ""
-echo -e "${BLUE}[2/6]${NC} Mise à jour système..."
+echo -e "${BLUE}[2/8]${NC} Mise à jour système..."
 sudo apt update -qq
 
 # Installation dépendances système
 echo ""
-echo -e "${BLUE}[3/6]${NC} Installation dépendances système..."
+echo -e "${BLUE}[3/8]${NC} Installation dépendances système..."
 echo "  - Python 3.12+"
 echo "  - pip, venv, git"
 echo "  - Java 21 (OpenJDK)"
@@ -59,15 +60,15 @@ echo -e "${GREEN}✓${NC} Dépendances installées"
 
 # Vérification versions
 echo ""
-echo -e "${BLUE}[4/6]${NC} Vérification versions..."
+echo -e "${BLUE}[4/8]${NC} Vérification versions..."
 PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
 JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2)
 echo -e "  Python: ${GREEN}$PYTHON_VERSION${NC}"
 echo -e "  Java:   ${GREEN}$JAVA_VERSION${NC}"
 
-# Clonage repository (UNIQUEMENT manager/)
+# Clonage repository
 echo ""
-echo -e "${BLUE}[5/6]${NC} Téléchargement projet depuis GitHub..."
+echo -e "${BLUE}[5/8]${NC} Téléchargement projet depuis GitHub..."
 
 if [ -d "$INSTALL_DIR" ]; then
     echo -e "${RED}⚠️  Dossier $INSTALL_DIR existe déjà${NC}"
@@ -81,22 +82,20 @@ if [ -d "$INSTALL_DIR" ]; then
     fi
 fi
 
-# Cloner le repo (contient manager/ + install.sh + README.md)
 git clone -b $GITHUB_BRANCH \
     "https://github.com/$GITHUB_USER/$GITHUB_REPO.git" \
-    "$INSTALL_DIR"
+    "$INSTALL_DIR" -q
 
 echo -e "${GREEN}✓${NC} Projet téléchargé"
 
-# Création structure dossiers (IMPORTÉ : créer les dossiers ignorés par Git)
+# Création structure dossiers
 echo ""
-echo -e "${BLUE}[6/6]${NC} Création structure dossiers..."
+echo -e "${BLUE}[6/8]${NC} Création structure dossiers..."
 cd "$INSTALL_DIR"
 
-# Créer les dossiers qui ne sont PAS sur GitHub
 mkdir -p server/current
 mkdir -p worlds
-mkdir -p backups
+mkdir -p backups/worlds
 mkdir -p logs
 mkdir -p manager/web/static
 
@@ -104,7 +103,7 @@ echo -e "${GREEN}✓${NC} Structure créée"
 
 # Installation Python venv + dépendances
 echo ""
-echo -e "${BLUE}[7/7]${NC} Installation dépendances Python..."
+echo -e "${BLUE}[7/8]${NC} Installation dépendances Python..."
 cd "$INSTALL_DIR/manager"
 
 python3 -m venv venv
@@ -115,6 +114,31 @@ pip install -r requirements.txt -q
 
 echo -e "${GREEN}✓${NC} Environnement Python configuré"
 
+# Configuration Crontab
+echo ""
+echo -e "${BLUE}[8/8]${NC} Configuration démarrage automatique..."
+
+# Créer script de démarrage
+cat > "$INSTALL_DIR/start.sh" << 'EOFSTART'
+#!/bin/bash
+cd ~/minecraft-manager/manager
+source venv/bin/activate
+uvicorn app:app --host 0.0.0.0 --port 8000 >> ~/minecraft-manager/logs/manager.log 2>&1
+EOFSTART
+
+chmod +x "$INSTALL_DIR/start.sh"
+
+# Ajouter au crontab (démarrage au boot)
+CRON_ENTRY="@reboot $INSTALL_DIR/start.sh"
+
+# Supprimer anciennes entrées minecraft-manager
+crontab -l 2>/dev/null | grep -v "minecraft-manager" | crontab - 2>/dev/null || true
+
+# Ajouter nouvelle entrée
+(crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
+
+echo -e "${GREEN}✓${NC} Crontab configuré (démarrage automatique au boot)"
+
 # Résumé installation
 echo ""
 echo -e "${GREEN}=========================================="
@@ -123,17 +147,35 @@ echo "==========================================${NC}"
 echo ""
 echo -e "📁 Emplacement: ${BLUE}$INSTALL_DIR${NC}"
 echo ""
-echo -e "🚀 Prochaines étapes:"
+echo -e "${YELLOW}🚀 Le manager va démarrer dans 2 minutes...${NC}"
 echo ""
-echo "1. Lancer le manager:"
-echo -e "   ${BLUE}cd $INSTALL_DIR/manager${NC}"
-echo -e "   ${BLUE}source venv/bin/activate${NC}"
-echo -e "   ${BLUE}uvicorn app:app --host 0.0.0.0 --port 8000${NC}"
+echo -e "Pendant ce temps, voici ce qui a été configuré:"
 echo ""
-echo "2. Accéder au dashboard:"
-echo -e "   ${BLUE}http://$(hostname -I | awk '{print $1}'):8000${NC}"
+echo "1. Démarrage automatique au boot (crontab)"
+echo "2. Logs disponibles: ~/minecraft-manager/logs/manager.log"
+echo "3. Dashboard: http://$(hostname -I | awk '{print $1}'):8000"
 echo ""
-echo "3. Cliquer sur 'Installer Serveur Minecraft' dans le dashboard"
+echo -e "${BLUE}Commandes utiles:${NC}"
+echo "  - Voir logs:     tail -f ~/minecraft-manager/logs/manager.log"
+echo "  - Arrêter:       pkill -f 'uvicorn app:app'"
+echo "  - Redémarrer:    ~/minecraft-manager/start.sh &"
 echo ""
 echo -e "📖 Documentation: https://github.com/$GITHUB_USER/$GITHUB_REPO"
+echo ""
+
+# Démarrage différé (2 minutes)
+echo -e "${YELLOW}⏳ Démarrage dans 2 minutes (120s)...${NC}"
+sleep 120
+
+echo -e "${GREEN}🚀 Lancement du Minecraft Manager...${NC}"
+cd "$INSTALL_DIR/manager"
+source venv/bin/activate
+nohup uvicorn app:app --host 0.0.0.0 --port 8000 >> "$INSTALL_DIR/logs/manager.log" 2>&1 &
+
+sleep 3
+
+echo ""
+echo -e "${GREEN}✓ Manager démarré en arrière-plan${NC}"
+echo ""
+echo -e "Accéder au dashboard: ${BLUE}http://$(hostname -I | awk '{print $1}'):8000${NC}"
 echo ""
