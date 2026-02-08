@@ -748,18 +748,3 @@ MIT License - voir [LICENSE](LICENSE) pour détails.
 ```
 
 ***
-
-## 📤 **Commandes pour pousser**
-
-```bash
-cd ~/minecraft-manager
-
-# Créer/Modifier README.md
-nano README.md
-# (Colle le contenu ci-dessus, Ctrl+X, Y, Enter)
-
-# Ajouter et push
-git add README.md
-git commit -m "📝 README bilingue EN/FR + crédit Perplexity AI"
-git push
-```
