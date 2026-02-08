@@ -98,6 +98,7 @@ mkdir -p server/current
 mkdir -p worlds
 mkdir -p backups
 mkdir -p logs
+mkdir -p manager/web/static
 
 echo -e "${GREEN}✓${NC} Structure créée"
 
