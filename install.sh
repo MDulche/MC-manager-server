@@ -21,7 +21,6 @@ NC='\033[0m'
 
 # Variables
 INSTALL_DIR="$HOME/minecraft-manager"
-GITHUB_USER="MDulche"
 GITHUB_REPO="MC-manager-server"
 GITHUB_BRANCH="main"
 
@@ -82,8 +81,8 @@ if [ -d "$INSTALL_DIR" ]; then
     fi
 fi
 
-git clone -b $GITHUB_BRANCH \
-    "https://github.com/$GITHUB_USER/$GITHUB_REPO.git" \
+git clone -b main \
+    "https://github.com/MDulche/MC-manager-server.git" \
     "$INSTALL_DIR" -q
 
 echo -e "${GREEN}✓${NC} Projet téléchargé"
@@ -160,7 +159,7 @@ echo "  - Voir logs:     tail -f ~/minecraft-manager/logs/manager.log"
 echo "  - Arrêter:       pkill -f 'uvicorn app:app'"
 echo "  - Redémarrer:    ~/minecraft-manager/start.sh &"
 echo ""
-echo -e "📖 Documentation: https://github.com/$GITHUB_USER/$GITHUB_REPO"
+echo -e "📖 Documentation: https://github.com/$GITHUB_REPO"
 echo ""
 
 # Démarrage différé (2 minutes)
