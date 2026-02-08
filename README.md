@@ -746,5 +746,3 @@ MIT License - voir [LICENSE](LICENSE) pour détails.
 **⭐ Si ce projet t'aide, n'hésite pas à mettre une étoile !**
 
 ```
-
-***
