@@ -25,17 +25,11 @@
         <form method="POST" action="/install-server" id="installForm">
             <div class="form-group">
                 <label for="download_url">URL de téléchargement</label>
-                <input
-                    type="text"
-                    id="download_url"
-                    name="download_url"
-                    value="{{ download_url }}"
-                    required
-                    placeholder="https://piston-data.mojang.com/..."
-                />
+                <input type="text" id="download_url" name="download_url"
+                       value="{{ download_url }}" required
+                       placeholder="https://piston-data.mojang.com/..." />
                 <p class="hint">💡 Modifiez cette URL si vous souhaitez installer une version spécifique</p>
             </div>
-
             <div class="btn-row" id="button-group">
                 <button type="submit" class="btn btn-green flex-1">✓ Installer</button>
                 <button type="button" class="btn btn-red flex-1" onclick="window.location.href='/'">✗ Annuler</button>
@@ -44,12 +38,12 @@
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p class="text-muted" class="mt-15">Installation en cours...</p>
+            <p class="text-muted mt-15">Installation en cours...</p>
         </div>
 
     </div>
 </div>
 
-<script src="/static/app.js"></script>
+<script src="../static/app.js"></script>
 </body>
 </html>

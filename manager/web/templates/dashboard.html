@@ -10,7 +10,7 @@
 <div class="page-wrapper">
 
     <!-- Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+    <div class="header-bar">
         <h1>🎮 Minecraft Manager</h1>
         <span id="status" class="status {% if running %}online{% else %}offline{% endif %}">
             {% if running %}🟢 EN LIGNE{% else %}🔴 ARRÊTÉ{% endif %}
@@ -20,7 +20,6 @@
     <!-- Actions serveur -->
     <div class="card">
         <h2>🖥️ Contrôles serveur</h2>
-
         {% if not server_installed %}
         <div class="btn-row">
             <button class="btn btn-purple" onclick="window.location.href='/install-server-form'">📥 Installer Serveur Minecraft</button>
@@ -30,8 +29,7 @@
             <button class="btn btn-purple" onclick="window.location.href='/update-server-form'">🔄 Mettre à Jour Serveur</button>
         </div>
         {% endif %}
-
-        <div class="btn-row" style="margin-top:10px;">
+        <div class="btn-row mt-10">
             <form action="/start" method="post">
                 <button type="submit" class="btn btn-green">▶️ Démarrer</button>
             </form>
@@ -53,9 +51,8 @@
     <!-- Gestion mondes -->
     <div class="card">
         <h2>🌍 Gestion mondes</h2>
-        <p style="margin-bottom:12px;">Monde actif : <strong id="current-world" style="color:var(--accent-green);">Chargement...</strong></p>
-
-        <div class="btn-row" style="align-items:center;">
+        <p class="mb-12">Monde actif : <strong id="current-world" class="text-green">Chargement...</strong></p>
+        <div class="btn-row">
             <select id="world-select">
                 <option value="">Chargement...</option>
             </select>
@@ -63,48 +60,45 @@
             <button class="btn btn-red"    onclick="deleteWorld()">🗑️ Supprimer</button>
             <button class="btn btn-blue"   onclick="showBackups()">💾 Backups</button>
         </div>
-
-        <form action="/create-world" method="post" onsubmit="return confirm('Le monde actuel sera archivé. Continuer?');" style="margin-top:12px;">
-            <div class="btn-row" style="align-items:center;">
-                <input type="text" name="world_name" placeholder="Nom du nouveau monde" style="width:260px;" required />
+        <form action="/create-world" method="post" onsubmit="return confirm('Le monde actuel sera archivé. Continuer?');" class="mt-12">
+            <div class="btn-row">
+                <input type="text" name="world_name" placeholder="Nom du nouveau monde" required />
                 <button type="submit" class="btn btn-orange">✨ Créer nouveau</button>
             </div>
         </form>
 
         <!-- Panel backups (caché par défaut) -->
-        <div id="backups-panel" style="display:none; margin-top:16px;" class="card" style="margin-bottom:0;">
-            <h3>💾 Backups du monde : <span id="backup-world-name" style="color:var(--accent-blue);"></span></h3>
-            <div id="backups-list" style="max-height:280px; overflow-y:auto; margin-top:10px;"></div>
+        <div id="backups-panel" class="card hidden mt-12" style="margin-bottom:0;">
+            <h3>💾 Backups du monde : <span id="backup-world-name" class="text-blue"></span></h3>
+            <div id="backups-list" class="scroll-panel"></div>
         </div>
     </div>
 
-    <!-- Configuration + Whitelist (côte à côte) -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+    <!-- Configuration + Whitelist -->
+    <div class="grid-2col">
 
-        <!-- Configuration serveur -->
         <div class="card">
             <h2>⚙️ Configuration serveur</h2>
             <div class="form-group">
                 <label for="max-players">Max joueurs</label>
                 <input type="number" id="max-players" min="1" max="100" style="width:90px;" />
             </div>
-            <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+            <div class="form-group inline-check">
                 <input type="checkbox" id="enable-whitelist" />
                 <label for="enable-whitelist" style="margin:0;">Activer whitelist</label>
             </div>
             <button class="btn btn-orange" onclick="saveConfig()">💾 Sauvegarder (redémarrage requis)</button>
         </div>
 
-        <!-- Whitelist -->
         <div class="card">
             <h2>👥 Whitelist</h2>
             <form onsubmit="event.preventDefault(); addWhitelist();">
-                <div class="btn-row" style="align-items:center; margin-bottom:12px;">
-                    <input type="text" id="whitelist-username" placeholder="Pseudo Minecraft" style="flex:1;" required />
+                <div class="btn-row mb-12">
+                    <input type="text" id="whitelist-username" placeholder="Pseudo Minecraft" class="flex-1" required />
                     <button type="submit" class="btn btn-green">➕ Ajouter</button>
                 </div>
             </form>
-            <div id="whitelist-players" style="max-height:180px; overflow-y:auto;"></div>
+            <div id="whitelist-players" class="scroll-md"></div>
         </div>
 
     </div>
@@ -123,13 +117,12 @@
     <div class="card">
         <h2>⌨️ Commande console</h2>
         <form action="/command" method="post">
-            <div class="btn-row" style="align-items:center;">
-                <input type="text" name="cmd" placeholder="/say Bonjour ou /list" autocomplete="off" style="flex:1;" />
+            <div class="btn-row">
+                <input type="text" name="cmd" placeholder="/say Bonjour ou /list" autocomplete="off" class="flex-1" />
                 <button type="submit" class="btn btn-blue">📤 Envoyer</button>
             </div>
         </form>
-
-        <h2 style="margin-top:18px;">📜 Console Live <span style="font-size:0.78rem; color:var(--text-muted); font-weight:400;">(refresh auto 1s)</span></h2>
+        <h2 class="mt-18">📜 Console Live <span class="text-sm-muted">(refresh auto 1s)</span></h2>
         <pre id="logs" class="console">{% for line in logs %}{{ line }}
 {% endfor %}</pre>
     </div>
@@ -137,16 +130,13 @@
     <!-- Backups globaux -->
     <div class="card">
         <h2>💾 Backups disponibles</h2>
-        <div id="backups" style="max-height:200px; overflow-y:auto;">
-            <p style="color:var(--text-muted);">Chargement...</p>
+        <div id="backups" class="scroll-sm">
+            <p class="text-muted">Chargement...</p>
         </div>
     </div>
 
 </div><!-- /page-wrapper -->
 
-
-<!-- ═══════════════════════════════ SCRIPTS ═══════════════════════════════ -->
-<script src="/static/app.js"></script>
-
+<script src="../static/app.js"></script>
 </body>
 </html>
