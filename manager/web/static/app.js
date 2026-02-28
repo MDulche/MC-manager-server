@@ -213,3 +213,45 @@ if (updateForm) {
         document.getElementById('loading').style.display      = 'block';
     });
 }
+
+/* ── Mise à jour du manager ─────────────────────────────────── */
+async function checkManagerUpdate() {
+    const status  = document.getElementById("update-status");
+    const actions = document.getElementById("update-actions");
+    const link    = document.getElementById("update-link");
+    if (!status) return;
+
+    try {
+        const data = await (await fetch("/api/updates")).json();
+
+        if (data.status === "update_available") {
+            status.innerHTML = `⚠️ <strong>Mise à jour disponible : ${data.current} → ${data.latest}</strong>`;
+            if (link)    link.href = data.url;
+            if (actions) actions.style.display = "flex";
+
+        } else if (data.status === "up_to_date") {
+            status.textContent = `✅ Manager à jour (${data.version})`;
+
+        } else if (data.status === "checking") {
+            status.textContent = "⏳ Vérification en cours...";
+
+        } else {
+            status.textContent = `❌ ${data.message || "Erreur vérification"}`;
+        }
+    } catch(e) {
+        status.textContent = "❌ Erreur réseau";
+    }
+}
+
+async function doManagerUpdate() {
+    if (!confirm("Lancer la mise à jour du manager ?\nLe dashboard va recharger automatiquement.")) return;
+
+    document.getElementById("update-status").textContent = "⏳ Mise à jour en cours...";
+    document.getElementById("update-actions").style.display = "none";
+
+    await fetch("/api/do-update", { method: "POST" });
+    setTimeout(() => location.reload(), 8000);
+}
+
+checkManagerUpdate();
+setInterval(checkManagerUpdate, 30 * 60 * 1000);
